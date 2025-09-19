@@ -1,0 +1,22 @@
+{
+  "tasks": [
+    {
+      "id": 1758321680617,
+      "text": "milk",
+      "done": true,
+      "due": null
+    },
+    {
+      "id": 1758323568423,
+      "text": "buy milk",
+      "done": false,
+      "due": null
+    },
+    {
+      "id": 1758323587842,
+      "text": "do financial calculation",
+      "done": true,
+      "due": "2023-11-01"
+    }
+  ]
+}

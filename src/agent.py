@@ -1,6 +1,7 @@
+# src/agent.py
 import logging
-
 from dotenv import load_dotenv
+
 from livekit.agents import (
     NOT_GIVEN,
     Agent,
@@ -17,96 +18,105 @@ from livekit.agents import (
 from livekit.plugins import noise_cancellation, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
+# If you are using your own AssemblyAI/Rime keys (recommended), import plugins:
+#   pip install "livekit-agents[assemblyai]~=1.2" "livekit-agents[rime]~=1.2"
+from livekit.plugins import assemblyai, rime
+
+# For tool definitions
+from livekit.agents import function_tool, RunContext
+from skills.todo import TodoStore
+
 logger = logging.getLogger("agent")
+load_dotenv(".env.local")  # loads LIVEKIT_*, ASSEMBLYAI_API_KEY, RIME_API_KEY
 
-load_dotenv(".env.local")
+# Shared store instance
+store = TodoStore()
 
 
-class Assistant(Agent):
+class TodoAgent(Agent):
+    """
+    Voice-first to-do & reminder assistant.
+    The LLM routes user requests to the three tools below.
+    Keep responses brief and confirm destructive actions.
+    """
+
     def __init__(self) -> None:
         super().__init__(
-            instructions="""You are a helpful voice AI assistant.
-            You eagerly assist users with their questions by providing information from your extensive knowledge.
-            Your responses are concise, to the point, and without any complex formatting or punctuation including emojis, asterisks, or other symbols.
-            You are curious, friendly, and have a sense of humor.""",
+            instructions=(
+                "You are a concise, friendly voice to-do assistant. "
+                "Use the available tools to add, list, and complete tasks. "
+                "Always confirm before marking a task complete. "
+                "If a request is unclear, ask a short follow-up. "
+                "Keep replies under one sentence."
+            )
         )
 
-    # To add tools, use the @function_tool decorator.
-    # Here's an example that adds a simple weather tool.
-    # You also have to add `from livekit.agents.llm import function_tool, RunContext` to the top of this file
-    # @function_tool
-    # async def lookup_weather(self, context: RunContext, location: str):
-    #     """Use this tool to look up current weather information in the given location.
-    #
-    #     If the location is not supported by the weather service, the tool will indicate this. You must tell the user the location's weather is unavailable.
-    #
-    #     Args:
-    #         location: The location to look up weather information for (e.g. city name)
-    #     """
-    #
-    #     logger.info(f"Looking up weather for {location}")
-    #
-    #     return "sunny with a temperature of 70 degrees."
+    async def on_enter(self):
+        # Spoken welcome when the session starts
+        await self.session.say(
+            "Hi! Say add buy milk, read my tasks, or mark milk done."
+        )
+
+    # ---------- Tools ----------
+
+    @function_tool(
+        name="add_task",
+        description="Add a task. Include optional due date string like 2025-09-20.",
+    )
+    async def add_task(
+        self, context: RunContext, text: str, due: str | None = None
+    ) -> dict:
+        tid = store.add(text, due)
+        return {"id": tid, "text": text, "due": due}
+
+    @function_tool(name="list_tasks", description="List up to 10 pending tasks.")
+    async def list_tasks(self, context: RunContext) -> dict:
+        tasks = store.list_open()[:10]
+        return {"tasks": tasks}
+
+    @function_tool(
+        name="complete_task",
+        description="Complete a task by id or matching text. Must confirm with user first.",
+    )
+    async def complete_task(self, context: RunContext, query: str) -> dict:
+        # Expect the LLM to ask for confirmation before calling this
+        task = store.complete(query)
+        return {"ok": bool(task), "task": task}
 
 
 def prewarm(proc: JobProcess):
+    # Load VAD once per worker for faster cold start
     proc.userdata["vad"] = silero.VAD.load()
 
 
 async def entrypoint(ctx: JobContext):
-    # Logging setup
-    # Add any other context you want in all log entries here
-    ctx.log_context_fields = {
-        "room": ctx.room.name,
-    }
+    # Enrich logs
+    ctx.log_context_fields = {"room": ctx.room.name}
 
-    # Set up a voice AI pipeline using OpenAI, Rime, AssemblyAI, and the LiveKit turn detector
+    # Build a voice pipeline using AssemblyAI (STT) + Rime (TTS).
+    # This version uses *your* AssemblyAI/Rime accounts via plugins.
     session = AgentSession(
-        # This starter template uses GPT-4o-mini via LiveKit Cloud.
-        # For a list of available models, see https://github.com/livekit/agents/blob/main/livekit-agents/livekit/agents/inference/llm.py
-        # Or, for a wider range of models, see plugins at https://docs.livekit.io/agents/integrations/llm/
-        llm="azure/gpt-4o-mini",
-        # This starter template uses AssemblyAI via LiveKit Cloud.
-        # To send extra parameters, use the following session setup instead of the version above:
-        # 1. add `from livekit.agents import inference` to the top of this file
-        # 2. Use the following session setup instead of the version above:
-        #     stt=inference.STT(model="assemblyai", extra_kwargs={ ... })
-        # See available configuration at https://github.com/livekit/agents/blob/main/livekit-agents/livekit/agents/inference/stt.py#L57
-        #
-        # Or to use your own AssemblyAI account:
-        # 1. Install livekit-agents[assemblyai]
-        # 2. Set ASSEMBLYAI_API_KEY in .env.local
-        # 3. Add `from livekit.plugins import assemblyai` to the top of this file
-        # 4. Use the following session setup instead of the version above
-        #     stt=assemblyai.STT()
-        # See available configuration at https://docs.livekit.io/agents/integrations/stt/assemblyai/
-        stt="assemblyai",
-        # This starter template uses Rime via LiveKit Cloud
-        # To change the voice, alter the voice name (currently "luna") after the colon.
-        # See available voices at https://docs.rime.ai/api-reference/voices
-        #
-        # Or, to use your own Rime account:
-        # 1. Install livekit-agents[rime]
-        # 2. Set RIME_API_KEY in .env.local
-        # 3. Add `from livekit.plugins import rime` to the top of this file
-        # 4. Use the following session setup instead of the version above
-        #     tts=rime.TTS(model="arcana", speaker="luna")
-        # See available configuration at https://docs.livekit.io/agents/integrations/tts/rime/
-        tts="rime/arcana:luna",
+        # If you prefer LiveKit Cloud defaults instead of your own keys:
+          stt="assemblyai",
+          tts="rime/arcana:luna",
+        # otherwise use plugin-based:
+        #stt=assemblyai.STT(interim_results=True),
+        # tts=rime.TTS(model="arcana", speaker="luna"),
         turn_detection=MultilingualModel(),
         vad=ctx.proc.userdata["vad"],
         preemptive_generation=True,
+        # LLM:
+        # Keep Azure GPT-4o-mini from the template; you can change via env/LiveKit project.
+        llm="azure/gpt-4o-mini",
     )
 
-    # sometimes background noise could interrupt the agent session, these are considered false positive interruptions
-    # when it's detected, you may resume the agent's speech
+    # Handle false-positive interruptions (resume TTS if noise cut us off)
     @session.on("agent_false_interruption")
     def _on_agent_false_interruption(ev: AgentFalseInterruptionEvent):
-        logger.info("false positive interruption, resuming")
+        logger.info("False positive interruption, resuming.")
         session.generate_reply(instructions=ev.extra_instructions or NOT_GIVEN)
 
-    # Metrics collection, to measure pipeline performance
-    # For more information, see https://docs.livekit.io/agents/build/metrics/
+    # Metrics collection
     usage_collector = metrics.UsageCollector()
 
     @session.on("metrics_collected")
@@ -120,25 +130,23 @@ async def entrypoint(ctx: JobContext):
 
     ctx.add_shutdown_callback(log_usage)
 
-    # Start the session, which initializes the voice pipeline and warms up the models
+    # Start pipeline and connect
     await session.start(
-        agent=Assistant(),
+        agent=TodoAgent(),
         room=ctx.room,
         room_input_options=RoomInputOptions(
-            # For telephony applications, use `BVCTelephony` for best results
-            noise_cancellation=noise_cancellation.BVC(),
+            noise_cancellation=noise_cancellation.BVC()
         ),
     )
 
-    # Join the room and connect to the user
     await ctx.connect()
 
-    # Good luck and have fun!
+    # Friendly intro line (non-interruptible)
     await session.generate_reply(
-        instructions="""
-        The user has just finished getting their first voice agent up and running.
-        Welcome them to the Voice Agent Hackathon and wish them good luck!
-        """,
+        instructions=(
+            "Welcome the user. Offer one-sentence help: "
+            "Say add buy milk, read my tasks, or mark milk done."
+        ),
         allow_interruptions=False,
     )
 
