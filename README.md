@@ -10,8 +10,9 @@
 </p>
 
 <p align="center">
-  <img src="assets/banner_aaiminder.png<img width="391" height="456" alt="image" src="https://github.com/user-attachments/assets/08b9ea29-e07c-4f02-bad8-78b8bda8ff49" />
-
+  <img width="391" height="456" alt="image" src="https://github.com/user-attachments/assets/0045ab12-b257-4029-9e9a-fe409aa66270">
+</p>
+ 
 
 <p align="center">
   <a href="https://cloud.livekit.io" target="_blank"><img src="https://img.shields.io/badge/LiveKit-Agents-0E7B7B?logo=livekit&logoColor=white" alt="LiveKit Agents"></a>
