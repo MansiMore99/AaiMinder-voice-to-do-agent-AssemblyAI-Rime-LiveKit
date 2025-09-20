@@ -1,184 +1,156 @@
-AaiMinder — Voice To-Do & Reminder Agent
+<!--
+  AaiMinder — README
+  Tip: put a wide hero image at: assets/banner_aaiminder.png  (1600x600+)
+-->
 
-A voice-controlled to-do assistant using AssemblyAI (STT) + Rime (TTS) on LiveKit Agents.
+<h1 align="center">📝 AaiMinder — Voice To-Do & Reminder Agent</h1>
 
-✨ What it does
+<p align="center">
+  <em>Voice-controlled to-do assistant powered by AssemblyAI (STT) + Rime (TTS) on LiveKit Agents.</em>
+</p>
 
-Speak naturally:
-
-“add buy milk”
-
-“read my tasks”
-
-“mark milk done”
-
-AaiMinder transcribes your voice (AssemblyAI), manages tasks locally (tasks.json), and replies out loud (Rime).
-
-🧱 Architecture
-
-LiveKit Agents: real-time voice agent runtime
-
-AssemblyAI: streaming speech-to-text (STT)
-
-Rime: low-latency text-to-speech (TTS)
-
-Local store: tasks.json (no DB needed)
-
-Mic → LiveKit Room → AssemblyAI (STT) → Agent (tools) → TodoStore → Rime (TTS) → Speaker
-
-📦 Requirements
-
-Python 3.10+
-
-uv (Python package manager)
-
-LiveKit Cloud project (URL + API key/secret)
-
-ASSEMBLYAI_API_KEY
-
-RIME_API_KEY
-
-⚙️ Setup
-
-Clone & enter the repo
-
-git clone <your-fork-or-local-repo-url>
-cd voice-agent-hackathon
+<p align="center">
+  <img src="assets/banner_aaiminder.png<img width="391" height="456" alt="image" src="https://github.com/user-attachments/assets/08b9ea29-e07c-4f02-bad8-78b8bda8ff49" />
 
 
-Install deps
+<p align="center">
+  <a href="https://cloud.livekit.io" target="_blank"><img src="https://img.shields.io/badge/LiveKit-Agents-0E7B7B?logo=livekit&logoColor=white" alt="LiveKit Agents"></a>
+  <a href="https://www.assemblyai.com/" target="_blank"><img src="https://img.shields.io/badge/AssemblyAI-STT-5856D6" alt="AssemblyAI"></a>
+  <a href="https://docs.rime.ai" target="_blank"><img src="https://img.shields.io/badge/Rime-TTS-8E44AD" alt="Rime"></a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/License-MIT-2ECC71" alt="MIT">
+</p>
 
+---
+
+## 📋 Overview
+
+AaiMinder lets you **speak your tasks** and hear quick confirmations.  
+It **transcribes** with AssemblyAI, **manages tasks** locally in `tasks.json`, and **speaks back** using Rime.
+
+> 💡 Best for a hackathon demo: tangible, fast, and no database setup.
+
+---
+
+## 🧭 Table of Contents
+
+1. [Features](#-features)  
+2. [Architecture](#-architecture)  
+3. [Quickstart](#-quickstart)  
+   - [Clone](#1-clone)  
+   - [Install](#2-install)  
+   - [Configure](#3-configure)  
+   - [Run](#4-run)  
+4. [Usage](#-usage)  
+5. [Project Structure](#-project-structure)  
+6. [Flutter UI (Optional)](#-flutter-ui-optional)  
+7. [Demo Script](#-demo-script)  
+8. [Troubleshooting](#-troubleshooting)  
+9. [Author](#-author)
+
+---
+
+## ✨ Features
+
+- 🎤 **Talk naturally**: add tasks, read tasks, mark tasks done  
+- ⚡ **Low-latency**: real-time STT + TTS for snappy conversations  
+- 🧠 **Simple & private**: local JSON store (`tasks.json`)  
+- 🧩 **Extensible**: add reminders, due dates, or a Google Sheet later
+
+---
+
+## 🏗 Architecture
+
+- 🧩 **LiveKit Agents** → real-time voice agent runtime  
+- 🗣 **AssemblyAI** → streaming speech-to-text (STT)  
+- 🔊 **Rime** → instant text-to-speech (TTS)  
+- 📂 **Local store** → `tasks.json` (no DB)
+
+```text
+Mic → LiveKit Room → AssemblyAI (STT) → Agent Tools (add/list/complete) → tasks.json → Rime (TTS) → Speaker
+```
+
+## 🚀 Quickstart
+
+🛠 Prereqs: LiveKit Cloud project (URL, Key, Secret), AssemblyAI API key, Rime API key, Python 3.10+, uv package manager.
+
+### 1) Clone
+```
+git clone https://github.com/<your-username>/AaiMinder-voice-to-do-agent-AssemblyAI-Rime-LiveKit.git
+cd AaiMinder-voice-to-do-agent-AssemblyAI-Rime-LiveKit
+```
+
+### 2) Install
+```
 uv sync
 uv pip install -U livekit-agents
 uv add "livekit-agents[assemblyai]~=1.2" "livekit-agents[rime]~=1.2"
+```
 
+### 3) Configure
+Create .env.local in the project root:
+```
+LIVEKIT_URL=wss://<your-project>.livekit.cloud
+LIVEKIT_API_KEY=<your_livekit_api_key>
+LIVEKIT_API_SECRET=<your_livekit_api_secret>
 
-Environment
+ASSEMBLYAI_API_KEY=<your_assemblyai_key>
+RIME_API_KEY=<your_rime_key>
+```
 
-cp .env.example .env.local
-
-
-Fill in:
-
-LIVEKIT_URL=...           # from LiveKit Cloud
-LIVEKIT_API_KEY=...
-LIVEKIT_API_SECRET=...
-
-ASSEMBLYAI_API_KEY=...
-RIME_API_KEY=...
-
-🗂️ Project Structure (key files)
-src/
-  agent.py           # AaiMinder agent: STT/TTS wiring + tools exposure
-  skills/
-    todo.py          # Tiny JSON-backed task store (add/list/complete)
-
-tasks.json           # Created at runtime (git-ignored recommended)
-.env.local           # Your secrets (never commit)
-
-🚀 Run (dev)
-
-Warm required models (VAD / turn detector):
-
+### 4) Run
+Create .env.local in the project root:
+```
 uv run python src/agent.py download-files
-
-
-Start the agent (dev mode):
-
 uv run python src/agent.py dev
+```
+
+### 🎙 Usage
+```text
+Say: "add prepare slides" 
+→ AaiMinder: "Added prepare slides."
+
+Say: "read my tasks" 
+→ AaiMinder: "You have 1 task: prepare slides."
+
+Say: "mark prepare slides done" 
+→ AaiMinder: "Marked prepare slides done."
+```
+🗂 Tasks persist in tasks.json (git-ignore recommended).
+
+## 🗂 Project Structure
+```text
+src/
+  agent.py           # voice pipeline + tools (AssemblyAI STT, Rime TTS)
+  skills/
+    todo.py          # tiny JSON-backed task store
+
+tasks.json           # created on first run
+.env.local           # secrets (do not commit)
+assets/
+  banner_aaiminder.png  # hero image for the README
+README.md
+```
+### 📱 Flutter UI (Optional)
+
+Want a pretty app with a Connect & Talk button and mic status?
+**Clone LiveKit’s Flutter starter:**
+```
+git clone https://github.com/livekit-examples/agent-starter-flutter
+cd agent-starter-flutter
+flutter pub get
+flutter run  # macOS, iOS, Android, or web
+```
+
+#### **Use the LiveKit Sandbox for tokens:**
+
+# create a sandbox token server
+```
+lk sandbox create
+# (or) wire your own token server in lib/services/token_service.dart
+```
+
+Keep your Python agent running.
+The Flutter app joins the same room and streams your mic to the agent.
 
 
-Open AaiMinder & talk
-
-In your LiveKit Cloud Console, open Agents → Playground.
-
-Ensure the Playground uses the same project (matches your LIVEKIT_* in .env.local).
-
-Click Start / Connect — the Playground creates a room and starts a job; your local worker (running via the command above) will pick it up.
-
-Grant mic permissions in the browser and speak:
-
-“add buy milk”
-
-“read my tasks”
-
-“mark milk done”
-
-Tip: keep your terminal visible — you’ll see logs and any tool calls (add/list/complete).
-
-🧪 Example Voice Script (for demo)
-
-You: “add buy milk”
-
-Agent: “added buy milk”
-
-You: “read my tasks”
-
-Agent: “you have one task: buy milk”
-
-You: “mark milk done”
-
-Agent: “marked buy milk done”
-
-🛠️ Implementation Notes
-STT / TTS
-
-src/agent.py wires:
-
-stt=assemblyai.STT(interim_results=True)
-
-tts=rime.TTS(model="arcana", speaker="luna")
-
-Tools (no custom parsing needed)
-
-TodoAgent exposes 3 tools the LLM calls:
-
-add_task(text, due=None)
-
-list_tasks()
-
-complete_task(query) (instructed to confirm before marking done)
-
-Task Store
-
-src/skills/todo.py uses a tiny JSON store:
-
-{
-  "tasks": [
-    { "id": 1712345678901, "text": "buy milk", "done": false, "due": null }
-  ]
-}
-
-🧹 .gitignore (recommendation)
-
-Add:
-
-tasks.json
-.env.local
-
-🐛 Troubleshooting
-
-ImportError: RunContext
-Import RunContext from livekit.agents (not .llm) and ensure you’ve upgraded livekit-agents.
-
-No audio / mic
-Allow mic access in the browser; reconnect the Playground.
-
-TTS/voice doesn’t change
-Ensure you’re using the plugin-based TTS:
-tts=rime.TTS(model="arcana", speaker="luna")
-(and that RIME_API_KEY is set).
-
-STT laggy
-Keep interim_results=True for AssemblyAI.
-
-Tools not triggering
-Make sure @function_tool decorators are present and your instructions explicitly tell the model to use tools for add/list/complete.
-
-🧭 Next Steps (optional polish)
-
-Reminders: add a remind_in(seconds, text) tool that schedules a delayed session.say(text).
-
-Due dates: light NLP for “tomorrow / in 2 hours” → normalize date string and pass to add_task(...).
-
-Google Sheets: swap JSON store for a sheet if you want cloud persistence.
