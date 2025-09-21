@@ -1,8 +1,36 @@
-# Voice Agent Hackathon Template
+<!--
+  AaiMinder — README
+  Tip: put a wide hero image at: assets/banner_aaiminder.png  (1600x600+)
+-->
 
-Welcome to the Voice Agent Hackathon! This template contains a ready-to-use voice agent built with [AssemblyAI](https://assemblyai.com) and [Rime](https://rime.ai). All you need to run it is a [LiveKit Cloud](https://cloud.livekit.io) project.
+<h1 align="center">📝 AaiMinder — Voice To-Do & Reminder Agent</h1>
 
-This starter app is compatible with any [custom web/mobile frontend](https://docs.livekit.io/agents/start/frontend/) or [SIP-based telephony](https://docs.livekit.io/agents/start/telephony/).
+<p align="center">
+  <em>Voice-controlled to-do assistant powered by AssemblyAI (STT) + Rime (TTS) on LiveKit Agents.</em>
+</p>
+
+<p align="center">
+  <img src="<img width="391" height="456" alt="image" src="https://github.com/user-attachments/assets/07741c67-290f-462f-982e-c857067b0bbe">
+</p>
+
+<p align="center">
+  <a href="https://cloud.livekit.io" target="_blank"><img src="https://img.shields.io/badge/LiveKit-Agents-0E7B7B?logo=livekit&logoColor=white" alt="LiveKit Agents"></a>
+  <a href="https://www.assemblyai.com/" target="_blank"><img src="https://img.shields.io/badge/AssemblyAI-STT-5856D6" alt="AssemblyAI"></a>
+  <a href="https://docs.rime.ai" target="_blank"><img src="https://img.shields.io/badge/Rime-TTS-8E44AD" alt="Rime"></a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/License-MIT-2ECC71" alt="MIT">
+</p>
+
+---
+
+## 📋 Overview
+
+AaiMinder lets you **speak your tasks** and hear quick confirmations.  
+It **transcribes** with AssemblyAI, **manages tasks** locally in `tasks.json`, and **speaks back** using Rime.
+
+> 💡 Best for a hackathon demo: tangible, fast, and no database setup.
+
+---
 
 ## Setup
 
